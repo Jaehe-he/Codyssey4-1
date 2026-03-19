@@ -41,7 +41,34 @@ def process_mission_log(file_name):
     except Exception as e:
         print(f'처리 중 예외 발생: {e}')
 
-    
+#3. 각 문장에 점수를 매기고 -일 경우 그 줄 출력
+def value_mission_log(value):
+    print("각 문장에 점수를 매기고 -일 경우 그 줄을 출력해라")
+    score = 0
+    save_line = []
+
+    negative_words = ['unstable', 'explosion', 'powered down']
+
+    with open("mission_computer_main.log", "r", encoding="utf-8") as f:
+        for line in f:
+            line_lower = line.lower()
+            found = False #중복 제거
+                
+            for word in negative_words:
+                if word in line_lower:
+                    score -= 1
+                    found = True
+
+            if found:
+                save_line.append(line.strip())
+            
+        print("최종 점수 : ", score)
+        print("문제 있는 줄 : ")
+        for l in save_line:
+            print(l)
+
+
+# mission_computer_main_example.log를 따로 만들어서 위험성 추출
 def analyze_by_level(example):
     # 단어를 지정하지 않고 'ERROR'나 'CRITICAL' 태그 자체를 탐지
         target_levels = ['WARNING', 'ERROR', 'CRITICAL', 'FATAL']
@@ -54,10 +81,14 @@ analyze_by_level('mission_computer_main_example.log')
 
 
 
+
 def main():
 #    mission_computer_main(LOG_FILE_PATH)
     process_mission_log(LOG_FILE_PATH)
+    print()
     analyze_by_level(EXAM_FILE_PATH)
+    print()
+    value_mission_log(LOG_FILE_PATH)
 
 if __name__ == '__main__':
     main()
