@@ -50,7 +50,21 @@ def list_csv(file_name):
             # 파일의 모든 줄을 읽고, 각 줄 앞뒤의 공백·줄바꿈을 제거
             words = [word.strip() for word in file.readlines()]
 
-    # ── 예외 처리 ──────────────────────────────────────────────────────────────
+
+    # 각 줄을 쉼표(,)로 분리해 2차원 리스트(행 × 열)로 변환
+        list_word = []
+        for word in words:
+            row = word.strip().split(',')  # "Water,1.0,1.0,3,0.2" → ['Water','1.0','1.0','3','0.2']
+            list_word.append(row)
+
+        return list_word  # [[헤더행], [데이터행1], [데이터행2], ...] 형태로 반환
+
+# ── 예외 처리 ──────────────────────────────────────────────────────────────
+    # 파일은 열렸지만 내용이 아예 없는 경우 → 빈 리스트 반환
+        if not words:
+            print(f'[오류] 파일이 비어있습니다: {file_name}')
+            return []
+        
     except FileNotFoundError:
         # 파일 자체가 없을 때: 이후 모든 작업이 불가능하므로 가장 먼저 처리
         print(f'[오류] 파일을 찾을 수 없습니다: {file_name}')
@@ -66,18 +80,7 @@ def list_csv(file_name):
         print(f'[오류] 파일 읽기 중 예외 발생: {e}')
         return []
 
-    # 파일은 열렸지만 내용이 아예 없는 경우 → 빈 리스트 반환
-    if not words:
-        print(f'[오류] 파일이 비어있습니다: {file_name}')
-        return []
-
-    # 각 줄을 쉼표(,)로 분리해 2차원 리스트(행 × 열)로 변환
-    list_word = []
-    for word in words:
-        row = word.strip().split(',')  # "Water,1.0,1.0,3,0.2" → ['Water','1.0','1.0','3','0.2']
-        list_word.append(row)
-
-    return list_word  # [[헤더행], [데이터행1], [데이터행2], ...] 형태로 반환
+    
 
 
 # =============================================================================
