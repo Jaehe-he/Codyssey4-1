@@ -8,8 +8,28 @@ DANGER_CSV_PATH = 'Mars_Base_Inventory_danger.csv'
 FLAMMABILITY_INDEX = 4
 DANGER_THRESHOLD = 0.7
 
-
 def read_csv(file_name):
+    """
+    CSV 파일을 읽어 출력합니다.
+    """
+    try:
+        # 파일 열기 (UTF-8 인코딩 준수)
+        with open(file_name, 'r', encoding='utf-8') as file:
+            lines=[line.strip() for line in file.readlines()]
+
+        # 전체 내용 출력
+        print('---[전체 내용 출력]---')
+        for line in lines:
+            print(line)
+    
+    except FileNotFoundError:
+        print(f"Error: '{file_name}' 파일을 찾을 수 없습니다.")
+    except Exception as e:
+        print(f'처리 중 예외 발생: {e}')
+
+
+
+def list_csv(file_name):
     """
     CSV 파일을 읽어서 2차원 리스트로 반환합니다.
 
@@ -299,7 +319,11 @@ def write_report(inventory, sorted_list, sub_list):
 def main():
     # 1단계 - CSV 전체 내용 출력
     print('---[전체 내용 출력]---')
-    inventory = read_csv(CSV_FILE_PATH)
+    read_csv(CSV_FILE_PATH)
+
+    # 1-1단계 - CSV를 list로 반환
+    print('---[2차원 List로 반환]---')
+    inventory = list_csv(CSV_FILE_PATH)
     if not inventory:
         print('[오류] 데이터 로드 실패. 프로그램을 종료합니다.')
         return
