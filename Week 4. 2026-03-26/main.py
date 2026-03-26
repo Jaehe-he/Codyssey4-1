@@ -61,16 +61,6 @@ def list_csv(file_name):
         print(f'[오류] 파일 읽기 권한이 없습니다: {file_name}')
         return []
 
-    except UnicodeDecodeError:
-        # UTF-8로 읽기 실패 시: 한글 포함 파일이 CP949로 저장된 경우를 대비해 재시도
-        print('[오류] UTF-8 인코딩 실패, CP949로 재시도합니다...')
-        try:
-            with open(file_name, 'r', encoding='cp949') as file:
-                words = [word.strip() for word in file.readlines()]
-        except Exception as e:
-            print(f'[오류] 재시도 실패: {e}')
-            return []
-
     except Exception as e:
         # 위에서 잡지 못한 모든 예외를 마지막 안전망으로 처리
         print(f'[오류] 파일 읽기 중 예외 발생: {e}')
