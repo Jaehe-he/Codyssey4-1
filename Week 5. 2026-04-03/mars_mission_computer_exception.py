@@ -25,6 +25,18 @@ class DummySensor:
 
         if not (0 <= self.env_values['mars_base_external_temperature'] <= 21):
             raise ValueError('외부 온도 값 이상')
+        
+        if not (50 <= self.env_values['mars_base_internal_humidity'] <= 60):
+            raise ValueError('내부 습도 이상')
+        
+        if not (500 <= self.env_values['mars_base_external_illuminance'] <= 715):
+            raise ValueError('외부 광량 이상')
+
+        if not (0.02 <= self.env_values['mars_base_internal_co2'] <= 0.1):
+            raise ValueError('내부 이산화탄소 농도 이상')
+
+        if not (4 <= self.env_values['mars_base_internal_oxygen'] <= 7):
+            raise ValueError('내부 산소 농도')
 
     # 센서 값 읽기+로그 저장
     def get_env(self):
