@@ -1,10 +1,10 @@
 import sys
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication,
+    QFrame,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
     QPushButton,
     QVBoxLayout,
@@ -19,95 +19,178 @@ class Calculator(QWidget):
         self.stored_value = None
         self.pending_operator = None
         self.reset_input = False
+        self.expression_text = ''
+
+        self.old_pos = None
 
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle('Calculator')
-        self.setFixedSize(360, 600)
+        self.setFixedSize(420, 860)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
 
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(12, 12, 12, 12)
-        main_layout.setSpacing(12)
+        outer_layout = QVBoxLayout()
+        outer_layout.setContentsMargins(20, 20, 20, 20)
 
-        display_layout = QHBoxLayout()
-        self.display = QLabel('0')
-        self.display.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.display.setFixedHeight(120)
-        self.display.setStyleSheet(
-            'background-color: black;'
-            'color: white;'
-            'padding: 20px;'
-            'border-radius: 10px;'
+        self.phone_body = QFrame()
+        self.phone_body.setStyleSheet(
+            'QFrame {'
+            'background-color: #111111;'
+            'border: 4px solid #2b2b2b;'
+            'border-radius: 42px;'
+            '}'
         )
-        self.display.setFont(QFont('Arial', 32))
-        display_layout.addWidget(self.display)
+
+        phone_layout = QVBoxLayout()
+        phone_layout.setContentsMargins(18, 18, 18, 22)
+        phone_layout.setSpacing(10)
+
+        self.notch = QFrame()
+        self.notch.setFixedSize(170, 34)
+        self.notch.setStyleSheet(
+            'QFrame {'
+            'background-color: black;'
+            'border-radius: 17px;'
+            '}'
+        )
+
+        notch_wrapper = QVBoxLayout()
+        notch_wrapper.setContentsMargins(0, 0, 0, 0)
+        notch_wrapper.setAlignment(Qt.AlignHCenter)
+        notch_wrapper.addWidget(self.notch)
+
+        self.history_label = QLabel('')
+        self.history_label.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        self.history_label.setFixedHeight(48)
+        self.history_label.setStyleSheet(
+            'color: #9a9a9a;'
+            'background-color: transparent;'
+            'padding-right: 10px;'
+        )
+        self.history_label.setFont(QFont('Arial', 16))
+
+        self.display = QLabel('0')
+        self.display.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        self.display.setFixedHeight(110)
+        self.display.setStyleSheet(
+            'color: white;'
+            'background-color: transparent;'
+            'padding-right: 10px;'
+        )
+        self.display.setFont(QFont('Arial', 40))
+
+        display_wrapper = QVBoxLayout()
+        display_wrapper.setContentsMargins(0, 8, 0, 8)
+        display_wrapper.setSpacing(0)
+        display_wrapper.addWidget(self.history_label)
+        display_wrapper.addWidget(self.display)
 
         button_layout = QGridLayout()
-        button_layout.setSpacing(10)
+        button_layout.setSpacing(12)
 
         buttons = [
             [('AC', 'function'), ('+/-', 'function'), ('%', 'function'), ('÷', 'operator')],
             [('7', 'number'), ('8', 'number'), ('9', 'number'), ('×', 'operator')],
             [('4', 'number'), ('5', 'number'), ('6', 'number'), ('-', 'operator')],
             [('1', 'number'), ('2', 'number'), ('3', 'number'), ('+', 'operator')],
-            [('0', 'number'), ('.', 'number'), ('=', 'operator')],
+            [('0', 'number_wide'), ('.', 'number'), ('=', 'operator')],
         ]
 
         for row, button_row in enumerate(buttons):
             col = 0
             for text, button_type in button_row:
                 button = QPushButton(text)
-                button.setFixedHeight(80)
                 button.setFont(QFont('Arial', 20))
+                button.setCursor(Qt.PointingHandCursor)
                 button.clicked.connect(self.handle_button_click)
 
-                if button_type == 'number':
-                    button.setStyleSheet(
-                        'background-color: #505050;'
-                        'color: white;'
-                        'border: none;'
-                        'border-radius: 40px;'
-                    )
-                elif button_type == 'operator':
-                    button.setStyleSheet(
-                        'background-color: #ff9500;'
-                        'color: white;'
-                        'border: none;'
-                        'border-radius: 40px;'
-                    )
-                else:
-                    button.setStyleSheet(
-                        'background-color: #d4d4d2;'
-                        'color: black;'
-                        'border: none;'
-                        'border-radius: 40px;'
-                    )
-
-                if text == '0':
-                    button_layout.addWidget(button, row, col, 1, 2)
-                    button.setStyleSheet(
-                        'background-color: #505050;'
-                        'color: white;'
-                        'border: none;'
-                        'border-radius: 40px;'
-                        'text-align: left;'
-                        'padding-left: 30px;'
-                    )
-                    col += 2
-                else:
+                if button_type == 'function':
+                    button.setFixedSize(82, 82)
+                    button.setStyleSheet(self.function_button_style())
                     button_layout.addWidget(button, row, col)
                     col += 1
 
-            if row == 4:
-                button_layout.setColumnStretch(0, 1)
-                button_layout.setColumnStretch(1, 1)
-                button_layout.setColumnStretch(2, 1)
-                button_layout.setColumnStretch(3, 1)
+                elif button_type == 'operator':
+                    button.setFixedSize(82, 82)
+                    button.setStyleSheet(self.operator_button_style())
+                    button_layout.addWidget(button, row, col)
+                    col += 1
 
-        main_layout.addLayout(display_layout)
-        main_layout.addLayout(button_layout)
-        self.setLayout(main_layout)
+                elif button_type == 'number':
+                    button.setFixedSize(82, 82)
+                    button.setStyleSheet(self.number_button_style())
+                    button_layout.addWidget(button, row, col)
+                    col += 1
+
+                elif button_type == 'number_wide':
+                    button.setFixedSize(176, 82)
+                    button.setStyleSheet(self.zero_button_style())
+                    button_layout.addWidget(button, row, col, 1, 2)
+                    col += 2
+
+        phone_layout.addLayout(notch_wrapper)
+        phone_layout.addLayout(display_wrapper)
+        phone_layout.addLayout(button_layout)
+
+        self.phone_body.setLayout(phone_layout)
+        outer_layout.addWidget(self.phone_body)
+        self.setLayout(outer_layout)
+
+    def number_button_style(self):
+        return (
+            'QPushButton {'
+            'background-color: #505050;'
+            'color: white;'
+            'border: none;'
+            'border-radius: 41px;'
+            '}'
+            'QPushButton:pressed {'
+            'background-color: #6a6a6a;'
+            '}'
+        )
+
+    def zero_button_style(self):
+        return (
+            'QPushButton {'
+            'background-color: #505050;'
+            'color: white;'
+            'border: none;'
+            'border-radius: 41px;'
+            'text-align: left;'
+            'padding-left: 30px;'
+            '}'
+            'QPushButton:pressed {'
+            'background-color: #6a6a6a;'
+            '}'
+        )
+
+    def function_button_style(self):
+        return (
+            'QPushButton {'
+            'background-color: #d4d4d2;'
+            'color: black;'
+            'border: none;'
+            'border-radius: 41px;'
+            '}'
+            'QPushButton:pressed {'
+            'background-color: #ebebeb;'
+            '}'
+        )
+
+    def operator_button_style(self):
+        return (
+            'QPushButton {'
+            'background-color: #ff9f0a;'
+            'color: white;'
+            'border: none;'
+            'border-radius: 41px;'
+            '}'
+            'QPushButton:pressed {'
+            'background-color: #ffb340;'
+            '}'
+        )
 
     def handle_button_click(self):
         button = self.sender()
@@ -131,6 +214,9 @@ class Calculator(QWidget):
         self.update_display()
 
     def input_number(self, number):
+        if self.current_input == 'Error':
+            self.current_input = '0'
+
         if self.reset_input:
             self.current_input = number
             self.reset_input = False
@@ -142,6 +228,9 @@ class Calculator(QWidget):
             self.current_input += number
 
     def input_decimal(self):
+        if self.current_input == 'Error':
+            self.current_input = '0'
+
         if self.reset_input:
             self.current_input = '0.'
             self.reset_input = False
@@ -151,6 +240,9 @@ class Calculator(QWidget):
             self.current_input += '.'
 
     def set_operator(self, operator):
+        if self.current_input == 'Error':
+            return
+
         if self.pending_operator is not None and not self.reset_input:
             self.calculate_result()
 
@@ -160,6 +252,7 @@ class Calculator(QWidget):
             self.stored_value = 0.0
 
         self.pending_operator = operator
+        self.expression_text = f'{self.format_number(self.stored_value)} {operator}'
         self.reset_input = True
 
     def calculate_result(self):
@@ -171,6 +264,12 @@ class Calculator(QWidget):
         except ValueError:
             current_value = 0.0
 
+        full_expression = (
+            f'{self.format_number(self.stored_value)} '
+            f'{self.pending_operator} '
+            f'{self.format_number(current_value)} ='
+        )
+
         try:
             if self.pending_operator == '+':
                 result = self.stored_value + current_value
@@ -181,6 +280,7 @@ class Calculator(QWidget):
             elif self.pending_operator == '÷':
                 if current_value == 0:
                     self.current_input = 'Error'
+                    self.expression_text = full_expression
                     self.stored_value = None
                     self.pending_operator = None
                     self.reset_input = True
@@ -190,11 +290,13 @@ class Calculator(QWidget):
                 return
 
             self.current_input = self.format_number(result)
+            self.expression_text = full_expression
             self.stored_value = None
             self.pending_operator = None
             self.reset_input = True
         except Exception:
             self.current_input = 'Error'
+            self.expression_text = full_expression
             self.stored_value = None
             self.pending_operator = None
             self.reset_input = True
@@ -204,9 +306,10 @@ class Calculator(QWidget):
         self.stored_value = None
         self.pending_operator = None
         self.reset_input = False
+        self.expression_text = ''
 
     def toggle_sign(self):
-        if self.current_input == '0' or self.current_input == 'Error':
+        if self.current_input in ['0', 'Error']:
             return
 
         if self.current_input.startswith('-'):
@@ -231,7 +334,21 @@ class Calculator(QWidget):
         return str(value)
 
     def update_display(self):
+        self.history_label.setText(self.expression_text)
         self.display.setText(self.current_input)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.old_pos = event.globalPos()
+
+    def mouseMoveEvent(self, event):
+        if self.old_pos is not None:
+            delta = QPoint(event.globalPos() - self.old_pos)
+            self.move(self.x() + delta.x(), self.y() + delta.y())
+            self.old_pos = event.globalPos()
+
+    def mouseReleaseEvent(self, event):
+        self.old_pos = None
 
 
 def main():
